@@ -1,0 +1,35 @@
+<doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>The Scriptures Mapped</title>
+  <meta name="description" content="The LDS Standard Works, Mapped">
+  <meta name="author" content="Ali Wilkin">
+
+  <link rel="stylesheet" href="css/style.css?v=1.0">
+
+  <script type="text/javascript" src="js/scriptures.js"></script>
+
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js"
+  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+  crossorigin="anonymous"></script>
+<!--[if lt IE 9]>
+<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="header"><h1>The Scriptures Mapped</h1></div>
+  <div id="scriptures"></div>
+  <div id="content">
+    <div id="map"></div>
+  </div>
+
+  <script type="text/javascript">
+    $(function () {
+      $(window).bind('hashchange', Scriptures.onHashChanged);
+      Scriptures.init(Scriptures.onHashChanged);
+    });
+  </script>
+</body>
+</html>
