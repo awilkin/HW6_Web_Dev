@@ -1,8 +1,17 @@
+/*===============================
+* FILE:   scriptures.js
+* AUTHOR: Ali Wilkin (copied from Stephen Liddle)
+* DATE:   13 Feb 2017
+*
+* DESCRIPTION: This module contains the JS front-end code for
+* the project Scriptures Mapped. IS 542, Winter 2017, BYU.
+*/
+
 /*property
-    abbr, ajax, backName, bookById, books, citeAbbr, citeFull, dataType, forEach, fullName,
-    gridName, id, init, jstTitle, maxBookId, minBookId, nextChapter, numChapters,
-    parentBookId, prevChapter, push, slice, subdiv, success, tocName,
-    url, urlForScriptureChapter, urlPath, volumes, webTitle
+    ajax, bookById, books, dataType, forEach, fullName, hash, html, id, init,
+    length, location, maxBookId, minBookId, nextChapter, numChapters,
+    onHashChanged, prevChapter, push, slice, split, substring, success, url,
+    urlForScriptureChapter, volumes
 */
 /*global $ */
 /*jslint es6 browser: true
@@ -41,6 +50,45 @@ let Scriptures = (function () {
         return true;
     };
 
+    const breadcrumbs = function (volume, book, chapter) {
+          let crumbs;
+
+          if (volume === undefined) {
+              crumbs = "<ul><li>The Scriptures</li>";
+          } else {
+              crumbs = "<ul><li><a href=\"javascript:void(0);\" onclick=\"Scriptures.hash()\">The Scriptures</a></li>";
+
+              if (book === undefined) {
+                  crumbs += "<li>" + volume.fullName + "</li>";
+              } else {
+                crumbs += "<li><a href=\"javascript:void(0);\" onclick=\"Scriptures.hash(" + volume.id + ")\">" + volume.fullName + "</a></li>";
+
+                if (chapter === undefined || chapter === 0) {
+                    crumbs += "<li>" + book.tocName + "</li>";
+                } else {
+                    crumbs += "<li><a href=\"javascript:void(0);\" onclick=\"Scriptures.hash(0, " + book.id + ")\">" + book.tocName + "</a></li>";
+                    crumbs += "<li>" + chapter + "</li>";
+                }
+              }
+          }
+
+          return crumbs + "</ul>";
+    };
+
+    const cacheBooks = function () {
+        volumeArray.forEach(function (volume) {
+            let volumeBooks = [];
+            let bookId = volume.minBookId;
+
+            while (bookId <= volume.maxBookId) {
+                volumeBooks.push(books[bookId]);
+                bookId += 1;
+            }
+
+            volume.books = volumeBooks;
+        });
+    };
+
     const encodedScriptureUrlParameters = function (bookId, chapter, verses, isJst) {
         let options = "";
 
@@ -59,14 +107,20 @@ let Scriptures = (function () {
 
     const navigateBook = function (bookId) {
         $("#scriptures").html("<p>Book: " + bookId + "</p>");
+        let book = books[bookId];
+        let volume = volumeArray[book.parentBookId - 1];
+        $("#crumb").html(breadcrumbs(volume, book));
     };
 
     const navigateChapter = function (bookId, chapter) {
-      $("#scriptures").html("<p>Book: " + bookId + ", Chapter: " + chapter + "</p>");
+        $("#scriptures").html("<p>Book: " + bookId + ", Chapter: " + chapter + "</p>");
+        let book = books[bookId];
+        let volume = volumeArray[book.parentBookId - 1];
+        $("#crumb").html(breadcrumbs(volume, book, chapter));
     };
 
     const navigateHome = function (volumeId) {
-        let newBody="";
+        let newBody = "";
 
         Scriptures.volumes().forEach(function (volume) {
             if (volumeId === undefined || volume.id === volumeId) {
@@ -80,28 +134,9 @@ let Scriptures = (function () {
         });
 
         $("#scriptures").html(newBody);
+        let volume = volumeArray[volumeId - 1];
+        $("#crumb").html(breadcrumbs(volume));
     };
-
-
-
-
-  /* ------------------------------
-  *         PRE-PROCESSING
-  */
-    let cacheBooks = function () {
-        volumeArray.forEach(function (volume) {
-            let volumeBooks = [];
-            let bookId = volume.minBookId;
-
-            while (bookId <= volume.maxBookId) {
-                volumeBooks.push(books[bookId]);
-                bookId += 1;
-            }
-
-            volume.books = volumeBooks;
-        });
-    };
-
 
   /* ------------------------------
   *         PUBLIC API
@@ -110,6 +145,25 @@ let Scriptures = (function () {
     const publicInterface = {
         bookById(bookId) {
             return books[bookId];
+        },
+
+        hash(volumeId, bookId, chapter) {
+            let newHash = "";
+
+            if (volumeId !== undefined) {
+                newHash += volumeId;
+
+                if (bookId !== undefined) {
+                    newHash += ":" + bookId;
+
+                    if (chapter !== undefined) {
+                        newHash += ":" + chapter;
+                    }
+                }
+            }
+
+
+            window.location.hash = newHash;
         },
 
         init(callback) {
@@ -176,7 +230,7 @@ let Scriptures = (function () {
             }
         },
 
-        onHashChanged () {
+        onHashChanged() {
             let bookId;
             let chapter;
             let ids = [];
