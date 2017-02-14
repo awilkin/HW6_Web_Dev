@@ -10,12 +10,11 @@
 /*property
     ajax, bookById, books, dataType, forEach, fullName, hash, html, id, init,
     length, location, maxBookId, minBookId, nextChapter, numChapters,
-    onHashChanged, prevChapter, push, slice, split, substring, success, url,
-    urlForScriptureChapter, volumes
+    onHashChanged, parentBookId, prevChapter, push, slice, split, substring, success,
+    tocName, url, urlForScriptureChapter, volumes
 */
 /*global $ */
-/*jslint es6 browser: true
-*/
+/*jslint es6 browser: true */
 
 
 
@@ -51,16 +50,16 @@ let Scriptures = (function () {
     };
 
     const breadcrumbs = function (volume, book, chapter) {
-          let crumbs;
+        let crumbs;
 
-          if (volume === undefined) {
-              crumbs = "<ul><li>The Scriptures</li>";
-          } else {
-              crumbs = "<ul><li><a href=\"javascript:void(0);\" onclick=\"Scriptures.hash()\">The Scriptures</a></li>";
+        if (volume === undefined) {
+            crumbs = "<ul><li>The Scriptures</li>";
+        } else {
+            crumbs = "<ul><li><a href=\"javascript:void(0);\" onclick=\"Scriptures.hash()\">The Scriptures</a></li>";
 
-              if (book === undefined) {
-                  crumbs += "<li>" + volume.fullName + "</li>";
-              } else {
+            if (book === undefined) {
+                crumbs += "<li>" + volume.fullName + "</li>";
+            } else {
                 crumbs += "<li><a href=\"javascript:void(0);\" onclick=\"Scriptures.hash(" + volume.id + ")\">" + volume.fullName + "</a></li>";
 
                 if (chapter === undefined || chapter === 0) {
@@ -69,10 +68,10 @@ let Scriptures = (function () {
                     crumbs += "<li><a href=\"javascript:void(0);\" onclick=\"Scriptures.hash(0, " + book.id + ")\">" + book.tocName + "</a></li>";
                     crumbs += "<li>" + chapter + "</li>";
                 }
-              }
-          }
+            }
+        }
 
-          return crumbs + "</ul>";
+        return crumbs + "</ul>";
     };
 
     const cacheBooks = function () {
