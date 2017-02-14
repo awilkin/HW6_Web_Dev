@@ -27,6 +27,20 @@ let Scriptures = (function () {
   /* ------------------------------
   *         PRIVATE METHODS
   */
+    const bookChapterValid = function (bookId, chapter) {
+        let book = books[bookId];
+
+        if (book === undefined || chapter < 0 || chapter > book.numChapters) {
+            return false;
+        }
+
+        if (chapter === 0 && book.numChapters > 0) {
+            return false;
+        }
+
+        return true;
+    };
+
     const encodedScriptureUrlParameters = function (bookId, chapter, verses, isJst) {
         let options = "";
 
@@ -42,6 +56,34 @@ let Scriptures = (function () {
             return "http://scriptures.byu.edu/scriptures/scriptures_ajax/" + bookId + "/" + chapter + "?verses=" + options;
         }
     };
+
+    const navigateBook = function (bookId) {
+        $("#scriptures").html("<p>Book: " + bookId + "</p>");
+    };
+
+    const navigateChapter = function (bookId, chapter) {
+      $("#scriptures").html("<p>Book: " + bookId + ", Chapter: " + chapter + "</p>");
+    };
+
+    const navigateHome = function (volumeId) {
+        let newBody="";
+
+        Scriptures.volumes().forEach(function (volume) {
+            if (volumeId === undefined || volume.id === volumeId) {
+                newBody += "<p class=\"volume\">" + volume.fullName + "</p><ul>";
+
+                volume.books.forEach(function (book) {
+                    newBody += "<li class=\"book\">" + book.fullName + "</li>";
+                });
+                newBody += "</ul>";
+            }
+        });
+
+        $("#scriptures").html(newBody);
+    };
+
+
+
 
   /* ------------------------------
   *         PRE-PROCESSING
@@ -109,20 +151,7 @@ let Scriptures = (function () {
             });
         },
 
-        navigateHome() {          
-            let newBody="";
 
-            Scriptures.volumes().forEach(function (volume) {
-                newBody += "<p class=\"volume\">" + volume.fullName + "</p><ul>";
-
-                volume.books.forEach(function (book) {
-                    newBody += "<li class=\"book\">" + book.fullName + "</li>";
-                });
-                newBody += "</ul>";
-            });
-
-            $("#scriptures").html(newBody);
-        },
 
         // Book ID and chapter must be integers
         // Returns undefined if there's no previous chapter
@@ -159,8 +188,35 @@ let Scriptures = (function () {
 
             if (ids.length <= 0) {
                 navigateHome();
-            }
+            } else if (ids.length === 1) {
+                // Show single volume's table of contents
+                volumeId = Number(ids[0]);
 
+                if (volumeId < volumeArray[0].id || volumeId > volumeArray[volumeArray.length - 1].id) {
+                    navigateHome();
+                } else {
+                    navigateHome(volumeId);
+                }
+            } else if (ids.length === 2) {
+                // Show book's list of chapters
+                bookId = Number(ids[1]);
+
+                if (books[bookId] === undefined) {
+                    navigateHome();
+                }
+
+                navigateBook(bookId);
+            } else {
+                // Display a specific chapter
+                bookId = Number(ids[1]);
+                chapter = Number(ids[2]);
+
+                if (!bookChapterValid(bookId, chapter)) {
+                    navigateHome();
+                }
+
+                navigateChapter(bookId, chapter);
+            }
         },
 
     // Book ID and chapter must be integers
