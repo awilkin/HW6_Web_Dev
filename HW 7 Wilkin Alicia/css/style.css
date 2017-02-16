@@ -222,7 +222,7 @@ div.navheading {
     justify-content: center;
 }
 
-ul.versesblock {
+#scriptures ul.versesblock {
     margin: 0;
     line-height: auto;
     list-style: none;

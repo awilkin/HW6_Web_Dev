@@ -50,7 +50,7 @@ let Scriptures = (function () {
   *         PRIVATE METHODS
   */
 
-    const bookChapterValid = function (bookId, chapter) {
+    function bookChapterValid (bookId, chapter) {
         let book = books[bookId];
 
         if (book === undefined || chapter < 0 || chapter > book.numChapters) {
@@ -62,9 +62,9 @@ let Scriptures = (function () {
         }
 
         return true;
-    };
+    }
 
-    const breadcrumbs = function (volume, book, chapter) {
+    function breadcrumbs (volume, book, chapter) {
         let crumbs;
 
         if (volume === undefined) {
@@ -87,9 +87,9 @@ let Scriptures = (function () {
         }
 
         return crumbs + "</ul>";
-    };
+    }
 
-    const cacheBooks = function () {
+    function cacheBooks () {
         volumeArray.forEach(function (volume) {
             let volumeBooks = [];
             let bookId = volume.minBookId;
@@ -101,9 +101,9 @@ let Scriptures = (function () {
 
             volume.books = volumeBooks;
         });
-    };
+    }
 
-    const encodedScriptureUrlParameters = function (bookId, chapter, verses, isJst) {
+    function encodedScriptureUrlParameters (bookId, chapter, verses, isJst) {
         let options = "";
 
         if (bookId !== undefined && chapter !== undefined) {
@@ -117,9 +117,9 @@ let Scriptures = (function () {
 
             return SCRIPTURES_URL + "?book=" + bookId + "&chap=" + chapter + "&verses=" + options;
         }
-    };
+    }
 
-    const transitionBreadcrumbs = function (newCrumbs) {
+    function transitionBreadcrumbs (newCrumbs) {
       if (animatingElements.hasOwnProperty("crumbsIn") || animatingElements.hasOwnProperty("crumbsOut")) {
           window.setTimeout(transitionBreadcrumbs, 200, newCrumbs);
           return;
@@ -157,20 +157,58 @@ let Scriptures = (function () {
       } else {
           $("#crumb").html(newCrumbs);
       }
+    }
 
+    function transitionScriptures (newContent) {
+        if (animatingElements.hasOwnProperty("scripIn") || animatingElements.hasOwnProperty("scripOut")) {
+            window.setTimeout(transitionScriptures, 200, newContent);
+            return;
+        }
 
-    };
+        let content = $("#scriptures *");
 
-    const getScriptureCallback = function (html) {
+        newContent = $(newContent);
+
+        if (content.length > 0) {
+            // Animate the transition to the new scripture content
+            animatingElements.scriptOut = content;
+            content.animate({
+                opacity: 0
+            }, {
+                queue: false,
+                duration: ANIMATION_DURATION,
+                complete: function () {
+                    content.remove();
+                    delete animatingElements.scripOut;
+                }
+            });
+
+            animatingElements.scriptIn = newContent;
+            newContent.css({opacity:0}).appendTo("#scriptures");
+            newContent.animate({
+                opacity: 1
+            }, {
+                queue: false,
+                duration: ANIMATION_DURATION,
+                complete: function () {
+                    delete animatingElements.scripOut;
+                }
+            });
+        } else {
+            $("#scriptures").html(newContent);
+        }
+    }
+
+    function getScriptureCallback (html) {
         transitionBreadcrumbs(requestedBreadcrumbs);
-        $("#scriptures").html(html);
-    };
+        transitionScriptures(html);
+    }
 
-    const getScriptureFailed = function () {
+    function getScriptureFailed () {
         console.log("Warning: scripture request from server failed.");
-    };
+    }
 
-    const navigateChapter = function (bookId, chapter) {
+    function navigateChapter (bookId, chapter) {
       if (bookId !== undefined){
         let book = books[bookId];
         let volume = volumeArray[book.parentBookId - 1];
@@ -183,9 +221,9 @@ let Scriptures = (function () {
           "error": getScriptureFailed
         });
       }
-    };
+    }
 
-    const navigateBook = function (bookId) {
+    function navigateBook (bookId) {
         let book = books[bookId];
         let volume = volumeArray[book.parentBookId - 1];
         let chapter = 1;
@@ -204,15 +242,13 @@ let Scriptures = (function () {
             }
 
             navContents += "</div>";
-            $("#scriptures").html(navContents);
+            transitionScriptures(navContents);
             transitionBreadcrumbs(breadcrumbs(volume, book));
         }
+    }
 
 
-    };
-
-
-    const navigateHome = function (volumeId) {
+    function navigateHome (volumeId) {
         let displayedVolume;
         let navContents = "<div id=\"scripnav\">";
 
@@ -224,17 +260,18 @@ let Scriptures = (function () {
                     navContents += "<a class=\"waves-effect waves-custom waves-ripple btn\" id=\"" + book.id + "\" href=\"#" + volume.id + ":" + book.id + "\">" + book.gridName + "</a>";
                 });
                 navContents += "</div>";
-                displayedVolume = volume;
+
+                if (volume.id === volumeId) {
+                    displayedVolume = volume;
+                }
             }
         });
 
         navContents += "<br /><br /></div>";
 
-
-
-        $("#scriptures").html(navContents);
+        transitionScriptures(navContents);
         transitionBreadcrumbs(breadcrumbs(displayedVolume));
-    };
+    }
 
   /* ------------------------------
   *         PUBLIC API
