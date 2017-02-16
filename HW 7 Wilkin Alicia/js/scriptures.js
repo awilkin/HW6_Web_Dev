@@ -43,6 +43,9 @@ let Scriptures = (function () {
     // Breadcrumbs for the request that is in progress
     let requestedBreadcrumbs;
 
+    // Next/previous links for the request that is in progress
+    let requestedNextPrev;
+
     // This object holds the books that are top-level "volumes".
     let volumeArray;
 
@@ -65,12 +68,12 @@ let Scriptures = (function () {
     }
 
     function breadcrumbs (volume, book, chapter) {
-        let crumbs;
+        let crumbs = "<ul><li>";
 
         if (volume === undefined) {
-            crumbs = "<ul><li>The Scriptures</li>";
+            crumbs = "The Scriptures</li>";
         } else {
-            crumbs = "<ul><li><a href=\"javascript:void(0);\" onclick=\"Scriptures.hash()\">The Scriptures</a></li>";
+            crumbs = "<a href=\"javascript:void(0);\" onclick=\"Scriptures.hash()\">The Scriptures</a></li>";
 
             if (book === undefined) {
                 crumbs += "<li>" + volume.fullName + "</li>";
@@ -104,9 +107,8 @@ let Scriptures = (function () {
     }
 
     function encodedScriptureUrlParameters (bookId, chapter, verses, isJst) {
-        let options = "";
-
         if (bookId !== undefined && chapter !== undefined) {
+            let options = "";
             if (verses !== undefined) {
                 options += verses;
             }
@@ -200,6 +202,9 @@ let Scriptures = (function () {
     }
 
     function getScriptureCallback (html) {
+        html = $(html);
+        html.find(".navheading").append("<div class=\"nextprev\">" + requestedNextPrev + "</div>");
+
         transitionBreadcrumbs(requestedBreadcrumbs);
         transitionScriptures(html);
     }
@@ -208,12 +213,71 @@ let Scriptures = (function () {
         console.log("Warning: scripture request from server failed.");
     }
 
+    function titleForBookChapter(book, chapter) {
+        return book.tocName + (chapter > 0 ? " " + chapter : "");
+    }
+
+    // Book ID and chapter must be integers
+    // Returns undefined if there's no previous chapter
+    function nextChapter(bookId, chapter) {
+        let book = books[bookId];
+
+        if (book !== undefined) {
+            if (chapter < book.numChapters) {
+                return [bookId, chapter + 1, titleForBookChapter(book, chapter + 1)];
+            }
+
+            let nextBook = books[bookId + 1];
+
+            if (nextBook !== undefined) {
+                let nextChapterValue = 0;
+
+                if (nextBook.numChapters > 0) {
+                    nextChapterValue = 1;
+                }
+                return [nextBook.id, nextChapterValue, titleForBookChapter(nextBook, nextChapterValue)];
+            }
+        }
+    }
+
+    // Book ID and chapter must be integers
+    // Returns undefined if there's no previous chapter
+    function prevChapter(bookId, chapter) {
+        let book = books[bookId];
+
+        if (book !== undefined) {
+            if (chapter > 1) {
+                return [bookId, chapter - 1, titleForBookChapter(book, chapter - 1)];
+            }
+
+            let prevBook = books[bookId - 1];
+
+            if (prevBook !== undefined) {
+                return [prevBook.id, prevBook.numChapters, titleForBookChapter(prevBook, prevBook.numChapters)];
+            }
+        }
+    }
+
     function navigateChapter (bookId, chapter) {
       if (bookId !== undefined){
         let book = books[bookId];
         let volume = volumeArray[book.parentBookId - 1];
 
         requestedBreadcrumbs = breadcrumbs(volume, book, chapter);
+
+        let nextPrev = prevChapter(bookId, chapter);
+
+        if (nextPrev === undefined) {
+            requestedNextPrev = "";
+        } else {
+            requestedNextPrev = "<a href=\"javascript:void(0);\" onclick=\"Scriptures.hash(0, " + nextPrev[0] + ", " + nextPrev[1] + ")\" title = \"" + nextPrev[2] + "\"><i class=\"material-icons\">skip_previous</i></a>";
+        }
+
+        nextPrev = nextChapter(bookId, chapter);
+
+        if (nextPrev !== undefined) {
+            requestedNextPrev += "<a href=\"javascript:void(0);\" onclick=\"Scriptures.hash(0, " + nextPrev[0] + ", " + nextPrev[1] + ")\" title = \"" + nextPrev[2] + "\"><i class=\"material-icons\">skip_next</i></a>";
+        }
 
         $.ajax({
           "url": encodedScriptureUrlParameters(bookId, chapter),
@@ -226,15 +290,14 @@ let Scriptures = (function () {
     function navigateBook (bookId) {
         let book = books[bookId];
         let volume = volumeArray[book.parentBookId - 1];
-        let chapter = 1;
-        let navContents;
 
         if (book.numChapters <= 0) {
             navigateChapter(book.id, 0);
         } else if (book.numChapters === 1) {
             navigateChapter(book.id, 1);
         } else {
-            navContents = "<div id=\"scripnav\"><div class=\"volume\"><h5>" + book.fullName + "</h5></div><div class=\"books\">";
+            let chapter = 1;
+            let navContents = "<div id=\"scripnav\"><div class=\"volume\"><h5>" + book.fullName + "</h5></div><div class=\"books\">";
 
             while (chapter <= book.numChapters) {
                 navContents += "<a class=\"waves-effect waves-custom waves-ripple btn chapter\" id=\"" + chapter + "\" href=\"#0:" + book.id + ":" + chapter + "\">" + chapter + "</a>";
@@ -246,7 +309,6 @@ let Scriptures = (function () {
             transitionBreadcrumbs(breadcrumbs(volume, book));
         }
     }
-
 
     function navigateHome (volumeId) {
         let displayedVolume;
@@ -340,31 +402,6 @@ let Scriptures = (function () {
             });
         },
 
-
-
-        // Book ID and chapter must be integers
-        // Returns undefined if there's no previous chapter
-        nextChapter(bookId, chapter) {
-            let book = books[bookId];
-
-            if (book !== undefined) {
-                if (chapter < book.numChapters) {
-                    return [bookId, chapter + 1];
-                }
-
-                let nextBook = books[bookId + 1];
-
-                if (nextBook !== undefined) {
-                    let nextChapter = 0;
-
-                    if (nextBook.numChapters > 0) {
-                        nextChapter = 1;
-                    }
-                    return [nextBook.id, nextChapter];
-                }
-            }
-        },
-
         onHashChanged() {
             let bookId;
             let chapter;
@@ -392,9 +429,10 @@ let Scriptures = (function () {
 
                 if (books[bookId] === undefined) {
                     navigateHome();
+                } else {
+                  navigateBook(bookId);
                 }
 
-                navigateBook(bookId);
             } else {
                 // Display a specific chapter
                 bookId = Number(ids[1]);
@@ -402,26 +440,8 @@ let Scriptures = (function () {
 
                 if (!bookChapterValid(bookId, chapter)) {
                     navigateHome();
-                }
-
-                navigateChapter(bookId, chapter);
-            }
-        },
-
-    // Book ID and chapter must be integers
-    // Returns undefined if there's no previous chapter
-        prevChapter(bookId, chapter) {
-            let book = books[bookId];
-
-            if (book !== undefined) {
-                if (chapter > 1) {
-                    return [bookId, chapter - 1];
-                }
-
-                let prevBook = books[bookId - 1];
-
-                if (prevBook !== undefined) {
-                    return [prevBook.id, prevBook.numChapters];
+                } else {
+                    navigateChapter(bookId, chapter);
                 }
             }
         },
