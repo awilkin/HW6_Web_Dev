@@ -96,6 +96,7 @@ div.subtitle {
 }
 
 #map {
+    background-image: url(../map.png);
     flex: 1 1 70%;
 }
 
@@ -270,4 +271,66 @@ span.verse {
 .navheading .nextprev {
     position: absolute;
     right: 1em;
+}
+
+/* 900px because Articles of Faith cuts off there on the breadcrumbs */
+@media only screen and (max-width: 900px) {
+
+  /* Content should flow vertically, not horizontally. map div above scripture nav div */
+  #header {
+    flex-direction: column;
+    height: auto;
+  }
+  #content {
+    flex-direction: column;
+  }
+  div.navheading {
+    flex-direction: column;
+  }
+  #map {
+    flex: 1 1 100%;
+    order: 1;
+    min-height: 60%;
+  }
+  #scriptures {
+    flex: 1 1 100%;
+    max-width: none;
+    min-height: 30%;
+    order: 2;
+  }
+
+  /* Don't show subtitle when the screen is narrow */
+  #header .subtitle {
+    display: none;
+  }
+
+  /* Stack the breadcrumbs beneath the title instead of side by side */
+  #crumb {
+    order: 2;
+    padding-top: .5em;
+    padding-left: 0;
+  }
+  #centerhead {
+    order: 1;
+  }
+  #crumb ul {
+    position: relative;
+  }
+
+  #crumb li {
+    display: block;
+    text-align: center;
+  }
+  #crumb li:not(:first-child)::before {
+    content: "";
+    padding: none;
+  }
+
+  /* Next prev/icons should be smaller when scripture window is narrower. */
+  div.nextprev {
+    margin-right: 50px;
+  }
+  .navheading .material-icons {
+    font-size: 16px;
+  }
 }
